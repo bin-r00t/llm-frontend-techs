@@ -5,7 +5,7 @@ import Loading from "./components/Loading.vue";
 import { ClipboardDocumentIcon } from "@heroicons/vue/24/outline";
 import FormItem from "./components/FormItem.vue";
 import DebugWindow from "./components/DebugWindow.vue";
-
+import notFoundPic from './assets/404.png'
 import { getRouteUrl } from './utils/url.ts'
 
 import { ref } from "vue";
@@ -25,9 +25,10 @@ const prompt_upsampling = ref(true);
 const endpoint = ref("/bfl/v1/flux-dev");
 
 /** process and result */
+const error = ref(false);
 const thinking = ref(false);
 const progress = ref("0%");
-const imageUrl = ref("");
+const imageUrl = ref('');
 const messages = ref<string[]>([]);
 
 function log(msg: string) {
@@ -35,6 +36,7 @@ function log(msg: string) {
 }
 
 async function generateImage() {
+  error.value = false;
   thinking.value = true;
   const payload = {
     prompt: prompt.value,
@@ -101,8 +103,9 @@ async function generateImage() {
       imageUrl.value = sample;
       log("图片更新:" + sample);
     } else {
-      imageUrl.value =
-        "https://res.bearbobo.com/resource/upload/vNg4ALJv/6659895-ox36cbkajrr.png";
+      imageUrl.value = notFoundPic;
+      error.value = true
+      // "https://res.bearbobo.com/resource/upload/vNg4ALJv/6659895-ox36cbkajrr.png";
       log("图片生成失败，错误原因:" + JSON.stringify(resultJson));
     }
     thinking.value = false;
@@ -199,7 +202,8 @@ function downloadImage() {
               请输入 prompt 然后点击生成
             </p>
           </div>
-          <img v-if="imageUrl" :src="imageUrl" alt="image" class="w-full h-full object-cover" />
+          <img v-if="imageUrl" :src="imageUrl" alt="image" class="object-cover"
+            :class="[error ? 'w-96 h-96' : 'w-full h-full']" />
         </section>
       </div>
     </div>
