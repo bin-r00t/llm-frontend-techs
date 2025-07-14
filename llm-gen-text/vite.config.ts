@@ -12,6 +12,20 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
+      "/bfl": {
+        target: "https://api.bfl.ai",
+        secure: true,
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/bfl/, ""),
+      },
+      "/jump": {
+        target: "https://api.eu1.bfl.ai",
+        secure: true,
+        changeOrigin: true,
+        rewrite: (path) => {
+          return path.replace(/.*?jump\?url=https:\/\/api\.eu1\.bfl\.ai\//, "")
+        }
+      },
     },
   },
 });
