@@ -6,6 +6,8 @@ import { ClipboardDocumentIcon } from "@heroicons/vue/24/outline";
 import FormItem from "./components/FormItem.vue";
 import DebugWindow from "./components/DebugWindow.vue";
 
+import { getRouteUrl } from './utils/url.ts'
+
 import { ref } from "vue";
 
 /** prompt and settings */
@@ -19,7 +21,7 @@ const output_format = ref<'jpeg' | 'png'>('jpeg');
 const webhook_url = ref<string | null>(null); // string lenght: 1 - 2083
 const webhook_secret = ref<string | null>(null);
 const seed = ref(Date.now())
-const prompt_upsampling = ref(false);
+const prompt_upsampling = ref(true);
 const endpoint = ref("/bfl/v1/flux-dev");
 
 /** process and result */
@@ -67,8 +69,9 @@ async function generateImage() {
 
   do {
     await new Promise((resolve) => setTimeout(resolve, 100));
-    const result = await fetch("/jump?url=" + pollingUrl);
-    log("jump:" + "/jump?url=" + pollingUrl);
+    const uri = getRouteUrl(pollingUrl)
+    const result = await fetch(uri);
+    log("jump:" + uri);
     //{
     //   "id": "4cc84fe4-42a5-4ad7-949f-082c3322768c",
     //   "status": "Ready",
@@ -107,13 +110,30 @@ async function generateImage() {
   } while (1);
 }
 
+// async function downloadImage() {
+//   if (!imageUrl.value) return;
+//   try {
+//     const res = await fetch(imageUrl.value); // cors error
+//     const blob = await res.blob();
+//     const url = window.URL.createObjectURL(blob);
+//     const a = document.createElement("a");
+//     a.href = url;
+//     a.target = "_blank";
+//     a.download = `generated-image-${Date.now()}.${output_format.value}`;
+//     document.body.appendChild(a);
+//     a.click();
+//     document.body.removeChild(a);
+//   }
+//   catch (e) {
+//     log('下载失败: ' + e);
+//   }
+// }
+
 function downloadImage() {
   if (!imageUrl.value) return;
-
   const a = document.createElement("a");
   a.href = imageUrl.value;
   a.target = "_blank";
-  a.download = `generated-image-${Date.now()}.jpg`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -135,17 +155,25 @@ function downloadImage() {
 
       <!-- endpoint setting  -->
       <section class="part-2 p-4 flex flex-col gap-2">
-        <FormItem label="Endpoint" :icon="ClipboardDocumentIcon" html-for="endpoint" v-model="endpoint" />
-        <FormItem label="Width" html-for="width" v-model="width" />
-        <FormItem label="Height" html-for="height" v-model="height" />
+        <FormItem input label="Endpoint" :icon="ClipboardDocumentIcon" html-for="endpoint" v-model="endpoint" />
+        <FormItem input label="Width" html-for="width" v-model="width" />
+        <FormItem input label="Height" html-for="height" v-model="height" />
+        <FormItem input label="Steps" html-for="steps" v-model="steps" />
+        <FormItem input label="Guidance" html-for="guidance" v-model="guidance" />
+        <FormItem input label="Safety Tolerance" html-for="safety_tolerance" v-model="safety_tolerance" />
+        <FormItem input label="Seed" html-for="seed" v-model="seed" />
+        <FormItem label="Prompt Upsampling" html-for="prompt_upsampling" v-model="prompt_upsampling" checkbox />
+        <FormItem label="Output Format" html-for="output_format" :simple-options="['jpeg', 'png']"
+          v-model="output_format" />
       </section>
 
       <!-- TODO: other settings -->
-      <section class="part-2 p-4">1</section>
-      <section class="part-2 p-4">2</section>
+      <!-- <section class="part-2 p-4">1</section>
+      <section class="part-2 p-4">2</section> -->
       <section class="part-3 p-4">
         <label class="text-xs text-gray-400">Logs</label>
         <DebugWindow v-if="messages.length" :messages="messages" />
+        <p class="my-4 text-xs text-neutral-400">There is no log yet!</p>
       </section>
     </div>
     <div class="right flex-1 flex bg-neutral-100">
@@ -153,8 +181,8 @@ function downloadImage() {
         <section class="head flex items-center justify-between border-b p-4 border-neutral-200">
           <h2 class="font-bold text-lg">
             <ProcessBar v-if="thinking" :progress="progress" />
-            <p v-else-if="!imageUrl" class="font-light text-neutral-500 text-sm">
-              准备好啦 👋
+            <p v-else-if="!imageUrl" class="font-light text-neutral-500">
+              📷 📷 📷 准备好啦 👋
             </p>
             <Result v-if="imageUrl" type="done" text="Done!" />
           </h2>
@@ -164,7 +192,7 @@ function downloadImage() {
           </button>
         </section>
         <section
-          class="images-container flex-1 overflow-y-auto text-sm bg-neutral-200 flex justify-center items-center p-4">
+          class="images-container flex-1 overflow-y-auto text-sm bg-neutral-200 flex justify-center items-center">
           <Loading v-if="thinking" />
           <div v-else-if="!imageUrl">
             <p class="font-bold text-neutral-500 text-center w-96 leading-8">
