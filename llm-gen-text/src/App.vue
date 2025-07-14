@@ -36,6 +36,10 @@ function log(msg: string) {
 }
 
 async function generateImage() {
+  // clean state
+  imageUrl.value = ''
+  messages.value = []
+  progress.value = '0%'
   error.value = false;
   thinking.value = true;
   const payload = {
